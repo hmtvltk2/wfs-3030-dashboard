@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bảng điều hành đô thị</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%232a78d6%22/%3E%3Cpath d=%22M4 11V7M8 11V4M12 11V8%22 stroke=%22white%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>Điều hành Đất đai · Quy hoạch · Xây dựng</h1>
+        <p class="sub"><span id="areaName">—</span> · <span id="fetchedAt">—</span></p>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Mục">
+      <a href="#tong-quan">Tổng quan</a>
+      <a href="#dat-dai">Đất đai</a>
+      <a href="#quy-hoach">Quy hoạch</a>
+      <a href="#xay-dung">Xây dựng</a>
+      <a href="#chat-luong">Dữ liệu</a>
+    </nav>
+    <div class="controls">
+      <select id="wardFilter" aria-label="Lọc theo phường"><option value="">Tất cả phường</option></select>
+      <button id="themeToggle" class="btn icon" type="button" aria-label="Đổi giao diện sáng/tối">◐</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ======================== TỔNG QUAN ======================== -->
+    <section id="tong-quan" class="section">
+      <div class="overview">
+        <div class="hero">
+          <div class="hero-top">
+            <div class="eyebrow">Công trình cần kiểm tra</div>
+            <div class="hero-value"><span id="heroValue">—</span><span class="hero-of">/ <span id="heroTotal">—</span></span></div>
+            <div class="hero-pct"><span id="heroPct">—</span> danh sách theo dõi trật tự XD</div>
+          </div>
+          <div class="flag-rows" id="flagRows"></div>
+          <button class="btn" type="button" data-goto="trat-tu">Xem danh sách →</button>
+        </div>
+        <div class="tiles" id="kpiTiles"></div>
+      </div>
+
+      <div class="map-row">
+        <div class="card map-card">
+          <div class="card-head">
+            <h2>Bản đồ tổng hợp</h2>
+            <span class="head-right">
+              <span class="pill" id="mapFilter" hidden></span>
+              <a class="btn ghost sm" id="openFullMap" href="https://nextgis.hcmgis.vn/resource/222/display?panel=layers"
+                 target="_blank" rel="noopener">HCMGIS ↗</a>
+            </span>
+          </div>
+          <div id="mainMap" class="map"></div>
+          <div id="mapLegend" class="legend-block inline"></div>
+        </div>
+        <div class="side">
+          <div class="card">
+            <div class="card-head"><h2>Điểm nóng theo phường</h2><span class="muted">công trình có dấu hiệu</span></div>
+            <div class="chart hot" id="chHot"></div>
+          </div>
+          <details class="card fold">
+            <summary><h2>Lớp bản đồ</h2></summary>
+            <div id="layerList" class="layer-list"></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================== ĐẤT ĐAI ======================== -->
+    <section id="dat-dai" class="section">
+      <div class="section-head"><h2 class="section-title">Đất đai</h2></div>
+      <div class="stats" id="landStats"></div>
+      <div class="card">
+        <div class="card-head"><h3>Hiện trạng ↔ Quy hoạch</h3><span class="muted">hai bản đồ di chuyển đồng bộ</span></div>
+        <div class="twin">
+          <div><div class="twin-label">Hiện trạng</div><div id="mapHT" class="map twin-map"></div></div>
+          <div><div class="twin-label">Quy hoạch</div><div id="mapQH" class="map twin-map"></div></div>
+        </div>
+        <div id="landLegend" class="legend-block inline"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-head"><h3>Cơ cấu đất</h3><span class="muted">% diện tích</span></div>
+          <div class="chart tall" id="chLandCompare"></div><ul class="legend" id="lgLandCompare"></ul></div>
+        <div class="card"><div class="card-head"><h3>Kế hoạch sử dụng đất</h3><span class="muted">ha</span></div>
+          <div class="chart tall" id="chKh"></div></div>
+      </div>
+      <details class="card fold">
+        <summary><h3>Danh mục dự án kế hoạch sử dụng đất</h3><span class="count" id="cntKh"></span></summary>
+        <div class="table-wrap scroll"><table class="tbl" id="tblKh"></table></div>
+      </details>
+    </section>
+
+    <!-- ======================== QUY HOẠCH ======================== -->
+    <section id="quy-hoach" class="section">
+      <div class="section-head"><h2 class="section-title">Quy hoạch</h2></div>
+      <div class="stats" id="planStats"></div>
+      <div class="grid-2">
+        <div class="card"><div class="card-head"><h3>Đồ án duyệt theo năm</h3></div><div class="chart" id="chPlanYear"></div></div>
+        <div class="card"><div class="card-head"><h3>Cơ cấu đất quy hoạch chung</h3><span class="muted">ha</span></div><div class="chart" id="chQhcMix"></div></div>
+        <div class="card"><div class="card-head"><h3>Cơ quan phê duyệt</h3><span class="muted">đồ án</span></div><div class="chart short" id="chApprover"></div></div>
+        <div class="card"><div class="card-head"><h3>Đường quy hoạch theo lộ giới</h3><span class="muted">km</span></div><div class="chart short" id="chRoads"></div></div>
+      </div>
+      <details class="card fold">
+        <summary><h3>10 đồ án lớn nhất</h3></summary>
+        <div class="table-wrap"><table class="tbl" id="tblPlans"></table></div>
+      </details>
+    </section>
+
+    <!-- ======================== XÂY DỰNG ======================== -->
+    <section id="xay-dung" class="section">
+      <div class="section-head"><h2 class="section-title">Cấp phép xây dựng</h2></div>
+      <div class="stats" id="permitStats"></div>
+      <div class="grid-2">
+        <div class="card"><div class="card-head"><h3>Hồ sơ theo phường</h3></div><div class="chart tall" id="chPermitWard"></div></div>
+        <div class="card"><div class="card-head"><h3>Hồ sơ theo năm</h3></div><div class="chart" id="chPermitYear"></div>
+          <div class="card-head"><h3>Loại hồ sơ</h3></div><div class="chart short" id="chPermitKind"></div></div>
+        <div class="card"><div class="card-head"><h3>Cấp số nhà theo phường</h3></div><div class="chart tall" id="chSonha"></div></div>
+        <div class="card"><div class="card-head"><h3>Tầng cao</h3></div><div class="chart short" id="chPermitFloors"></div>
+          <div class="card-head"><h3>Hồ sơ chưa hoàn chỉnh</h3></div><ul class="list" id="dossierIssues"></ul></div>
+      </div>
+      <details class="card fold">
+        <summary><h3>Công trình diện tích sàn lớn nhất</h3></summary>
+        <div class="table-wrap"><table class="tbl" id="tblTopGfa"></table></div>
+      </details>
+
+      <div class="section-head" id="trat-tu"><h2 class="section-title">Trật tự xây dựng</h2>
+        <span class="muted">đối chiếu tự động — dùng để khoanh vùng kiểm tra, chưa phải kết luận vi phạm</span></div>
+      <div class="stats" id="orderStats"></div>
+      <div class="grid-2">
+        <div class="card"><div class="card-head"><h3>Dấu hiệu phát hiện</h3><span class="muted">công trình</span></div><div class="chart short" id="chFlags"></div></div>
+        <div class="card"><div class="card-head"><h3>Theo phường</h3></div><div class="chart tall" id="chOrderWard"></div>
+          <ul class="legend" id="lgOrderWard"></ul></div>
+      </div>
+      <details class="card fold" id="sitesFold">
+        <summary><h3>Danh sách cần kiểm tra</h3><span class="count" id="cntSites"></span></summary>
+        <div class="chips" id="flagChips"></div>
+        <div class="table-wrap scroll"><table class="tbl" id="tblSites"></table></div>
+        <p class="muted">Bấm một dòng để xem trên bản đồ.</p>
+      </details>
+    </section>
+
+    <!-- ======================== CHẤT LƯỢNG DỮ LIỆU ======================== -->
+    <section id="chat-luong" class="section">
+      <div class="section-head"><h2 class="section-title">Dữ liệu</h2></div>
+      <details class="card fold">
+        <summary><h3>Vấn đề chất lượng dữ liệu</h3><span class="count" id="cntDq"></span></summary>
+        <div class="table-wrap"><table class="tbl" id="tblDq"></table></div>
+      </details>
+      <details class="card fold">
+        <summary><h3>Nguồn dữ liệu</h3><span class="count">16 lớp</span></summary>
+        <p class="muted">WFS: <a id="srcLink" href="#" target="_blank" rel="noopener"></a> · không hiển thị họ tên chủ sở hữu.</p>
+        <div class="table-wrap"><table class="tbl" id="tblLayers"></table></div>
+      </details>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
